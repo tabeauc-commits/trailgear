@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Trail Gear Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700;800&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg:       #1A1F2E;
+    --surface:  #242B3D;
+    --surface2: #2E3750;
+    --border:   #3A4460;
+    --orange:   #E8721A;
+    --orange2:  #F59344;
+    --green:    #5A8A3C;
+    --green2:   #7AB850;
+    --text:     #E8EAF0;
+    --muted:    #8892A4;
+    --danger:   #D94040;
+    --radius:   10px;
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    min-height: 100vh;
+  }
+
+  /* ── HEADER ── */
+  header {
+    background: var(--surface);
+    border-bottom: 2px solid var(--orange);
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .logo {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: 1px;
+    color: var(--text);
+  }
+  .logo span { color: var(--orange); }
+  #strava-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #FC4C02;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s;
+  }
+  #strava-btn:hover { opacity: .85; }
+  #strava-btn svg { width: 16px; height: 16px; fill: #fff; }
+  #strava-status {
+    font-size: 12px;
+    color: var(--green2);
+    display: none;
+    align-items: center;
+    gap: 6px;
+  }
+  #strava-status.active { display: flex; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green2); animation: pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.4} }
+
+  /* ── TABS ── */
+  nav {
+    background: var(--surface);
+    display: flex;
+    border-bottom: 1px solid var(--border);
+  }
+  .tab {
+    flex: 1;
+    padding: 12px 4px;
+    text-align: center;
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .5px;
+    color: var(--muted);
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    transition: color .2s, border-color .2s;
+  }
+  .tab.active { color: var(--orange); border-color: var(--orange); }
+  .tab:hover:not(.active) { color: var(--text); }
+
+  /* ── PAGES ── */
+  .page { display: none; padding: 16px; max-width: 680px; margin: 0 auto; }
+  .page.active { display: block; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: .5px;
+    margin-bottom: 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::before {
+    content:'';
+    display: inline-block;
+    width: 4px;
+    height: 20px;
+    background: var(--orange);
+    border-radius: 2px;
+  }
+
+  /* ── CARDS ── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 12px;
+  }
+
+  /* ── FORM ── */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; margin-bottom: 4px; }
+  input, select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    outline: none;
+    transition: border-color .2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--orange); }
+  select option { background: var(--surface2); }
+  .full-col { grid-column: 1 / -1; }
+
+  /* ── BUTTONS ── */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family: 'Inter', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: opacity .2s, transform .1s;
+  }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { background: var(--orange); color: #fff; }
+  .btn-primary:hover { opacity: .9; }
+  .btn-secondary { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+  .btn-secondary:hover { border-color: var(--orange); }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-sm { padding: 5px 10px; font-size: 12px; }
+  .btn-green { background: var(--green); color: #fff; }
+  .btn-green:hover { opacity: .9; }
+
+  /* ── GEAR CARD ── */
+  .gear-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 10px;
+    position: relative;
+    overflow: hidden;
+  }
+  .gear-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, var(--orange), var(--orange2));
+  }
+  .gear-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .gear-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    line-height: 1.1;
+  }
+  .gear-type-badge {
+    display: inline-block;
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .5px;
+    text-transform: uppercase;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--surface2);
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .gear-km {
+    text-align: right;
+  }
+  .gear-km .big { font-family: 'Barlow Condensed', sans-serif; font-size: 28px; font-weight: 800; color: var(--orange); line-height: 1; }
+  .gear-km .unit { font-size: 11px; color: var(--muted); }
+
+  /* ── WEAR BAR ── */
+  .wear-bar-wrap { margin: 8px 0 6px; }
+  .wear-bar-track {
+    background: var(--surface2);
+    border-radius: 3px;
+    height: 8px;
+    overflow: hidden;
+    position: relative;
+  }
+  .wear-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width .8s cubic-bezier(.4,0,.2,1);
+  }
+  .wear-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+  .wear-pct {
+    font-weight: 600;
+  }
+
+  /* ── SESSION CARD ── */
+  .session-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .session-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+  }
+  .session-icon.trail { background: rgba(90,138,60,.2); }
+  .session-icon.road  { background: rgba(232,114,26,.15); }
+  .session-icon.other { background: rgba(136,146,164,.15); }
+  .session-info { flex: 1; min-width: 0; }
+  .session-name {
+    font-weight: 600;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .session-meta { font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .session-dist {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--orange);
+    white-space: nowrap;
+  }
+  .session-gear-tags { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 5px; }
+  .gear-tag {
+    font-size: 10px;
+    padding: 2px 7px;
+    border-radius: 20px;
+    background: var(--surface2);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .gear-tag.assigned { border-color: var(--green); color: var(--green2); }
+
+  /* ── DASHBOARD ── */
+  .kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    text-align: center;
+  }
+  .kpi-val {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 32px;
+    font-weight: 800;
+    color: var(--orange);
+    line-height: 1;
+  }
+  .kpi-lbl { font-size: 11px; color: var(--muted); margin-top: 3px; text-transform: uppercase; letter-spacing: .5px; }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.6);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 90vh;
+    overflow-y: auto;
+  }
+  .modal-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-size: 20px;
+    font-weight: 800;
+    margin-bottom: 16px;
+    color: var(--orange);
+  }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; }
+
+  /* ── TOAST ── */
+  #toast {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(60px);
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-left: 4px solid var(--green);
+    border-radius: 8px;
+    padding: 10px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    z-index: 999;
+    transition: transform .3s;
+    white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+
+  /* ── MISC ── */
+  .empty-state {
+    text-align: center;
+    color: var(--muted);
+    padding: 32px 16px;
+    font-size: 13px;
+  }
+  .empty-state .icon { font-size: 36px; margin-bottom: 8px; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 10px; }
+  .flex-gap { display: flex; gap: 6px; flex-wrap: wrap; }
+
+  /* ── STRAVA IMPORT SECTION ── */
+  #strava-import-section { margin-bottom: 16px; }
+  .import-card {
+    background: linear-gradient(135deg, rgba(252,76,2,.1), rgba(232,114,26,.05));
+    border: 1px solid rgba(252,76,2,.3);
+    border-radius: var(--radius);
+    padding: 14px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .import-card .icon { font-size: 28px; }
+
+  /* ── STRAVA CONFIG ── */
+  #config-section {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    margin-bottom: 16px;
+    display: none;
+  }
+  #config-section.open { display: block; }
+  .config-note {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.5;
+    margin-top: 6px;
+  }
+
+  .tag-dot {
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    margin-right: 4px;
+  }
+
+  @media (max-width: 420px) {
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.three { grid-template-columns: 1fr 1fr; }
+    .kpi-grid { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">TRAIL<span>GEAR</span></div>
+  <div id="strava-status"><div class="dot"></div><span id="strava-athlete-name">Connecté</span></div>
+  <button id="strava-btn" onclick="stravaConnect()">
+    <svg viewBox="0 0 24 24"><path d="M15.387 17.944l-2.089-4.116h-3.065L15.387 24l5.15-10.172h-3.066m-7.008-5.599l2.836 5.599h4.172L10.463 0l-7 13.828h4.169"/></svg>
+    Connecter Strava
+  </button>
+</header>
+
+<nav>
+  <div class="tab active" onclick="showTab('gear')">🥾 Équipements</div>
+  <div class="tab" onclick="showTab('sessions')">📋 Séances</div>
+  <div class="tab" onclick="showTab('dashboard')">📊 Tableau de bord</div>
+</nav>
+
+<!-- ══════════════ PAGE GEAR ══════════════ -->
+<div id="page-gear" class="page active">
+  <div class="section-title">Mes équipements</div>
+
+  <div id="gear-list"></div>
+
+  <button class="btn btn-primary" style="width:100%" onclick="openGearModal()">+ Ajouter un équipement</button>
+</div>
+
+<!-- ══════════════ PAGE SESSIONS ══════════════ -->
+<div id="page-sessions" class="page">
+  <div class="section-title">Séances</div>
+
+  <div id="strava-import-section">
+    <div id="config-section">
+      <div class="section-title" style="font-size:15px;margin-bottom:10px">Configuration API Strava</div>
+      <div class="form-grid">
+        <div>
+          <label>Client ID</label>
+          <input id="strava-client-id" type="text" placeholder="Ex: 12345"/>
+        </div>
+        <div>
+          <label>Client Secret</label>
+          <input id="strava-client-secret" type="text" placeholder="abc123..."/>
+        </div>
+      </div>
+      <p class="config-note">
+        👉 Créez votre app sur <strong>strava.com/settings/api</strong> → callback URL : <strong id="redirect-uri-display"></strong><br/>
+        Activités importées : Course à pied (Run) et Trail Run uniquement.
+      </p>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn btn-primary" onclick="saveStravaConfig()">Sauvegarder & Connecter</button>
+        <button class="btn btn-secondary" onclick="document.getElementById('config-section').classList.remove('open')">Annuler</button>
+      </div>
+    </div>
+
+    <div class="import-card">
+      <div class="icon">🏃</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:13px">Import Strava</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">Récupère tes activités récentes et assigne l'équipement utilisé</div>
+      </div>
+      <button class="btn btn-sm" style="background:#FC4C02;color:#fff" onclick="importFromStrava()">Importer</button>
+    </div>
+  </div>
+
+  <div class="row">
+    <span style="font-size:12px;color:var(--muted)" id="session-count">0 séance(s)</span>
+    <button class="btn btn-secondary btn-sm" onclick="openSessionModal()">+ Saisie manuelle</button>
+  </div>
+
+  <div id="session-list"></div>
+</div>
+
+<!-- ══════════════ PAGE DASHBOARD ══════════════ -->
+<div id="page-dashboard" class="page">
+  <div class="section-title">Tableau de bord</div>
+  <div class="kpi-grid" id="kpi-grid"></div>
+  <div class="section-title" style="font-size:16px">Usure par équipement</div>
+  <div id="dashboard-gear-list"></div>
+</div>
+
+<!-- ══════════════ MODAL GEAR ══════════════ -->
+<div class="modal-overlay" id="modal-gear">
+  <div class="modal">
+    <div class="modal-title" id="gear-modal-title">Nouvel équipement</div>
+    <div class="form-grid">
+      <div class="full-col">
+        <label>Nom</label>
+        <input id="g-name" type="text" placeholder="Ex: Hoka Speedgoat 5"/>
+      </div>
+      <div>
+        <label>Type</label>
+        <select id="g-type">
+          <option value="Chaussures Trail">Chaussures Trail</option>
+          <option value="Chaussures Route">Chaussures Route</option>
+          <option value="Bâtons">Bâtons</option>
+          <option value="Veste">Veste</option>
+          <option value="Sac">Sac</option>
+          <option value="Autre">Autre</option>
+        </select>
+      </div>
+      <div>
+        <label>Km à l'achat</label>
+        <input id="g-km-init" type="number" value="0" min="0" placeholder="0"/>
+      </div>
+      <div>
+        <label>Durée de vie (km)</label>
+        <input id="g-km-max" type="number" placeholder="Ex: 800"/>
+      </div>
+      <div>
+        <label>Couleur</label>
+        <input id="g-color" type="color" value="#E8721A" style="height:38px;padding:2px 4px;cursor:pointer"/>
+      </div>
+      <div class="full-col">
+        <label>Notes</label>
+        <input id="g-notes" type="text" placeholder="Ex: Trail technique, profil rocheux"/>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-gear')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveGear()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL SESSION ══════════════ -->
+<div class="modal-overlay" id="modal-session">
+  <div class="modal">
+    <div class="modal-title">Nouvelle séance</div>
+    <div class="form-grid">
+      <div class="full-col">
+        <label>Nom / Description</label>
+        <input id="s-name" type="text" placeholder="Ex: Sortie Causse du matin"/>
+      </div>
+      <div>
+        <label>Date</label>
+        <input id="s-date" type="date"/>
+      </div>
+      <div>
+        <label>Type</label>
+        <select id="s-type">
+          <option value="trail">🌲 Trail</option>
+          <option value="road">🏙️ Route</option>
+          <option value="other">🔵 Autre</option>
+        </select>
+      </div>
+      <div>
+        <label>Distance (km)</label>
+        <input id="s-dist" type="number" step="0.1" min="0" placeholder="0.0"/>
+      </div>
+      <div>
+        <label>D+ (m)</label>
+        <input id="s-elev" type="number" min="0" placeholder="0"/>
+      </div>
+    </div>
+    <hr/>
+    <label style="margin-bottom:8px;display:block">Équipements utilisés</label>
+    <div id="s-gear-checkboxes" style="display:flex;flex-direction:column;gap:6px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-session')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveSession()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ MODAL ASSIGN GEAR ══════════════ -->
+<div class="modal-overlay" id="modal-assign">
+  <div class="modal">
+    <div class="modal-title">Assigner équipement</div>
+    <div style="font-size:13px;color:var(--muted);margin-bottom:12px" id="assign-session-info"></div>
+    <label style="margin-bottom:8px;display:block">Équipements utilisés</label>
+    <div id="assign-gear-checkboxes" style="display:flex;flex-direction:column;gap:8px"></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('modal-assign')">Annuler</button>
+      <button class="btn btn-primary" onclick="saveAssign()">Valider</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ══════════════════════════════
+// STORAGE
+// ══════════════════════════════
+const KEYS = { gear:'tgt_gear', sessions:'tgt_sessions', strava:'tgt_strava' };
+
+function load(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || []; } catch { return []; }
+}
+function loadObj(key) {
+  try { return JSON.parse(localStorage.getItem(key)) || {}; } catch { return {}; }
+}
+function save(key, val) { localStorage.setItem(key, JSON.stringify(val)); }
+
+let gear     = load(KEYS.gear);
+let sessions = load(KEYS.sessions);
+let stravaConfig = loadObj(KEYS.strava);
+
+// ══════════════════════════════
+// TABS
+// ══════════════════════════════
+function showTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const tabs = ['gear','sessions','dashboard'];
+  document.querySelectorAll('.tab')[tabs.indexOf(tab)].classList.add('active');
+  document.getElementById('page-'+tab).classList.add('active');
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'sessions')  renderSessions();
+  if (tab === 'gear')      renderGear();
+}
+
+// ══════════════════════════════
+// UTILS
+// ══════════════════════════════
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function toast(msg, color='var(--green)') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.borderLeftColor = color;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function openModal(id)  { document.getElementById(id).classList.add('open'); }
+
+function gearKm(g) {
+  return sessions
+    .filter(s => s.gearIds && s.gearIds.includes(g.id))
+    .reduce((a,s) => a + (parseFloat(s.dist)||0), 0) + (parseFloat(g.kmInit)||0);
+}
+function wearPct(g) {
+  if (!g.kmMax) return null;
+  return Math.min(100, Math.round(gearKm(g) / g.kmMax * 100));
+}
+function wearColor(pct) {
+  if (pct === null) return 'var(--orange)';
+  if (pct < 50) return 'var(--green)';
+  if (pct < 75) return 'var(--orange2)';
+  if (pct < 90) return 'var(--orange)';
+  return 'var(--danger)';
+}
+function typeIcon(type) {
+  const m = { trail:'🌲', road:'🏙️', other:'🔵', 'Run':'🏙️', 'TrailRun':'🌲' };
+  return m[type] || '🏃';
+}
+function fmt(n) { return (Math.round(n*10)/10).toFixed(1); }
+
+// ══════════════════════════════
+// GEAR RENDER
+// ══════════════════════════════
+function renderGear() {
+  const el = document.getElementById('gear-list');
+  if (!gear.length) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">👟</div>Aucun équipement.<br/>Ajoute ta première paire !</div>`;
+    return;
+  }
+  el.innerHTML = gear.map(g => {
+    const km = gearKm(g);
+    const pct = wearPct(g);
+    const col = wearColor(pct);
+    const remaining = g.kmMax ? Math.max(0, g.kmMax - km) : null;
+    return `
+    <div class="gear-card">
+      <div style="position:absolute;top:0;left:0;right:0;height:3px;background:${g.color||'var(--orange)'}"></div>
+      <div class="gear-header">
+        <div>
+          <div class="gear-name">${g.name}</div>
+          <span class="gear-type-badge">${g.type}</span>
+          ${g.notes ? `<div style="font-size:11px;color:var(--muted);margin-top:4px">${g.notes}</div>` : ''}
+        </div>
+        <div class="gear-km">
+          <div class="big">${fmt(km)}</div>
+          <div class="unit">km parcourus</div>
+          ${remaining !== null ? `<div style="font-size:10px;color:var(--muted);margin-top:2px">${fmt(remaining)} km restants</div>` : ''}
+        </div>
+      </div>
+      ${pct !== null ? `
+      <div class="wear-bar-wrap">
+        <div class="wear-bar-track">
+          <div class="wear-bar-fill" style="width:${pct}%;background:${col}" data-pct="${pct}"></div>
+        </div>
+        <div class="wear-label">
+          <span>Usure</span>
+          <span class="wear-pct" style="color:${col}">${pct}%${pct>=90?' ⚠️':''}</span>
+        </div>
+      </div>` : '<div style="font-size:11px;color:var(--muted);margin:6px 0">Durée de vie non définie</div>'}
+      <div style="display:flex;gap:6px;margin-top:8px">
+        <button class="btn btn-secondary btn-sm" onclick="editGear('${g.id}')">✏️ Modifier</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteGear('${g.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Animate bars
+  setTimeout(() => {
+    document.querySelectorAll('.wear-bar-fill').forEach(b => {
+      b.style.width = b.dataset.pct + '%';
+    });
+  }, 80);
+}
+
+// ══════════════════════════════
+// GEAR MODAL
+// ══════════════════════════════
+let editingGearId = null;
+
+function openGearModal(id) {
+  editingGearId = id || null;
+  const g = id ? gear.find(x=>x.id===id) : null;
+  document.getElementById('gear-modal-title').textContent = g ? 'Modifier équipement' : 'Nouvel équipement';
+  document.getElementById('g-name').value    = g?.name || '';
+  document.getElementById('g-type').value    = g?.type || 'Chaussures Trail';
+  document.getElementById('g-km-init').value = g?.kmInit || 0;
+  document.getElementById('g-km-max').value  = g?.kmMax || '';
+  document.getElementById('g-color').value   = g?.color || '#E8721A';
+  document.getElementById('g-notes').value   = g?.notes || '';
+  openModal('modal-gear');
+}
+function editGear(id) { openGearModal(id); }
+
+function saveGear() {
+  const name = document.getElementById('g-name').value.trim();
+  if (!name) { toast('Nom requis','var(--danger)'); return; }
+  const obj = {
+    id: editingGearId || uid(),
+    name,
+    type:    document.getElementById('g-type').value,
+    kmInit:  parseFloat(document.getElementById('g-km-init').value)||0,
+    kmMax:   parseFloat(document.getElementById('g-km-max').value)||null,
+    color:   document.getElementById('g-color').value,
+    notes:   document.getElementById('g-notes').value.trim(),
+    createdAt: editingGearId ? gear.find(x=>x.id===editingGearId)?.createdAt : new Date().toISOString()
+  };
+  if (editingGearId) {
+    gear = gear.map(g => g.id === editingGearId ? obj : g);
+    toast('Équipement modifié');
+  } else {
+    gear.push(obj);
+    toast('Équipement ajouté ✓');
+  }
+  save(KEYS.gear, gear);
+  closeModal('modal-gear');
+  renderGear();
+}
+
+function deleteGear(id) {
+  if (!confirm('Supprimer cet équipement ?')) return;
+  gear = gear.filter(g => g.id !== id);
+  save(KEYS.gear, gear);
+  toast('Supprimé','var(--danger)');
+  renderGear();
+}
+
+// ══════════════════════════════
+// SESSIONS RENDER
+// ══════════════════════════════
+function renderSessions() {
+  const el = document.getElementById('session-list');
+  document.getElementById('session-count').textContent = sessions.length + ' séance(s)';
+  if (!sessions.length) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">🗓️</div>Aucune séance.<br/>Importe depuis Strava ou saisis manuellement.</div>`;
+    return;
+  }
+  const sorted = [...sessions].sort((a,b) => new Date(b.date)-new Date(a.date));
+  el.innerHTML = sorted.map(s => {
+    const assignedGear = (s.gearIds||[]).map(id => gear.find(g=>g.id===id)).filter(Boolean);
+    const cls = s.type==='trail'||s.type==='TrailRun' ? 'trail' : s.type==='road'||s.type==='Run' ? 'road' : 'other';
+    const icon = typeIcon(s.type);
+    const dateStr = s.date ? new Date(s.date).toLocaleDateString('fr-FR',{day:'2-digit',month:'short'}) : '';
+    return `
+    <div class="session-card">
+      <div class="session-icon ${cls}">${icon}</div>
+      <div class="session-info">
+        <div class="session-name">${s.name||'Séance'}</div>
+        <div class="session-meta">${dateStr}${s.elev ? ' · D+ '+s.elev+'m' : ''}${s.source==='strava'?' · Strava':''}</div>
+        <div class="session-gear-tags">
+          ${assignedGear.length
+            ? assignedGear.map(g=>`<span class="gear-tag assigned" style="border-color:${g.color||'var(--green)'};color:${g.color||'var(--green2)'}">${g.name}</span>`).join('')
+            : `<span class="gear-tag" style="cursor:pointer" onclick="openAssign('${s.id}')">+ Assigner équipement</span>`}
+          ${assignedGear.length ? `<span class="gear-tag" style="cursor:pointer" onclick="openAssign('${s.id}')">✏️</span>` : ''}
+        </div>
+      </div>
+      <div style="text-align:right">
+        <div class="session-dist">${fmt(s.dist)} <span style="font-size:13px">km</span></div>
+        <button class="btn btn-sm btn-danger" style="margin-top:6px" onclick="deleteSession('${s.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════
+// SESSION MANUAL
+// ══════════════════════════════
+function openSessionModal() {
+  const today = new Date().toISOString().slice(0,10);
+  document.getElementById('s-date').value = today;
+  document.getElementById('s-name').value = '';
+  document.getElementById('s-dist').value = '';
+  document.getElementById('s-elev').value = '';
+  document.getElementById('s-type').value = 'trail';
+  // gear checkboxes
+  const div = document.getElementById('s-gear-checkboxes');
+  if (!gear.length) { div.innerHTML = '<span style="color:var(--muted);font-size:12px">Aucun équipement défini.</span>'; }
+  else div.innerHTML = gear.map(g => `
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text)">
+      <input type="checkbox" value="${g.id}" style="width:16px;height:16px;accent-color:${g.color||'var(--orange)'}"/>
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${g.color||'var(--orange)'};margin-right:2px"></span>
+      ${g.name} <span style="color:var(--muted);font-size:11px">(${g.type})</span>
+    </label>`).join('');
+  openModal('modal-session');
+}
+
+function saveSession() {
+  const name = document.getElementById('s-name').value.trim();
+  const dist = parseFloat(document.getElementById('s-dist').value);
+  if (!dist) { toast('Distance requise','var(--danger)'); return; }
+  const gearIds = [...document.querySelectorAll('#s-gear-checkboxes input:checked')].map(i=>i.value);
+  const s = {
+    id: uid(),
+    name: name || 'Séance',
+    date: document.getElementById('s-date').value,
+    type: document.getElementById('s-type').value,
+    dist,
+    elev: parseFloat(document.getElementById('s-elev').value)||0,
+    gearIds,
+    source: 'manual'
+  };
+  sessions.push(s);
+  save(KEYS.sessions, sessions);
+  closeModal('modal-session');
+  toast('Séance enregistrée ✓');
+  renderSessions();
+}
+
+function deleteSession(id) {
+  if (!confirm('Supprimer cette séance ?')) return;
+  sessions = sessions.filter(s=>s.id!==id);
+  save(KEYS.sessions, sessions);
+  toast('Séance supprimée','var(--danger)');
+  renderSessions();
+}
+
+// ══════════════════════════════
+// ASSIGN GEAR
+// ══════════════════════════════
+let assigningSessionId = null;
+
+function openAssign(sessionId) {
+  assigningSessionId = sessionId;
+  const s = sessions.find(x=>x.id===sessionId);
+  document.getElementById('assign-session-info').textContent =
+    `${s.name} · ${fmt(s.dist)} km · ${s.date ? new Date(s.date).toLocaleDateString('fr-FR') : ''}`;
+  const div = document.getElementById('assign-gear-checkboxes');
+  if (!gear.length) { div.innerHTML = '<span style="color:var(--muted);font-size:12px">Aucun équipement défini.</span>'; }
+  else div.innerHTML = gear.map(g => {
+    const checked = (s.gearIds||[]).includes(g.id) ? 'checked' : '';
+    return `
+    <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;text-transform:none;letter-spacing:0;color:var(--text)">
+      <input type="checkbox" value="${g.id}" ${checked} style="width:16px;height:16px;accent-color:${g.color||'var(--orange)'}"/>
+      <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${g.color||'var(--orange)'}"></span>
+      ${g.name} <span style="color:var(--muted);font-size:11px">(${g.type})</span>
+    </label>`; }).join('');
+  openModal('modal-assign');
+}
+
+function saveAssign() {
+  const gearIds = [...document.querySelectorAll('#assign-gear-checkboxes input:checked')].map(i=>i.value);
+  sessions = sessions.map(s => s.id===assigningSessionId ? {...s, gearIds} : s);
+  save(KEYS.sessions, sessions);
+  closeModal('modal-assign');
+  toast('Équipement assigné ✓');
+  renderSessions();
+}
+
+// ══════════════════════════════
+// DASHBOARD
+// ══════════════════════════════
+function renderDashboard() {
+  const totalKm = sessions.reduce((a,s)=>a+(parseFloat(s.dist)||0),0);
+  const totalSessions = sessions.length;
+  const trailKm = sessions.filter(s=>s.type==='trail'||s.type==='TrailRun').reduce((a,s)=>a+(parseFloat(s.dist)||0),0);
+  const roadKm  = sessions.filter(s=>s.type==='road'||s.type==='Run').reduce((a,s)=>a+(parseFloat(s.dist)||0),0);
+
+  document.getElementById('kpi-grid').innerHTML = `
+    <div class="kpi"><div class="kpi-val">${fmt(totalKm)}</div><div class="kpi-lbl">km totaux</div></div>
+    <div class="kpi"><div class="kpi-val">${totalSessions}</div><div class="kpi-lbl">séances</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--green2)">${fmt(trailKm)}</div><div class="kpi-lbl">km trail</div></div>
+    <div class="kpi"><div class="kpi-val" style="color:var(--orange2)">${fmt(roadKm)}</div><div class="kpi-lbl">km route</div></div>
+  `;
+
+  const el = document.getElementById('dashboard-gear-list');
+  if (!gear.length) {
+    el.innerHTML = `<div class="empty-state"><div class="icon">📊</div>Aucun équipement à afficher.</div>`;
+    return;
+  }
+
+  el.innerHTML = gear.map(g => {
+    const km = gearKm(g);
+    const pct = wearPct(g);
+    const col = wearColor(pct);
+    const sessCount = sessions.filter(s=>(s.gearIds||[]).includes(g.id)).length;
+    const trailKmG = sessions.filter(s=>(s.gearIds||[]).includes(g.id)&&(s.type==='trail'||s.type==='TrailRun')).reduce((a,s)=>a+(parseFloat(s.dist)||0),0);
+    const roadKmG  = sessions.filter(s=>(s.gearIds||[]).includes(g.id)&&(s.type==='road'||s.type==='Run')).reduce((a,s)=>a+(parseFloat(s.dist)||0),0);
+
+    return `
+    <div class="card" style="border-left: 4px solid ${g.color||'var(--orange)'}">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px">
+        <div>
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:17px;font-weight:700">${g.name}</div>
+          <span class="gear-type-badge">${g.type}</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-family:'Barlow Condensed',sans-serif;font-size:26px;font-weight:800;color:${col};line-height:1">${fmt(km)}</div>
+          <div style="font-size:11px;color:var(--muted)">km parcourus</div>
+        </div>
+      </div>
+      ${pct!==null ? `
+      <div class="wear-bar-wrap">
+        <div class="wear-bar-track" style="height:10px">
+          <div class="wear-bar-fill" style="width:${pct}%;background:${col}"></div>
+        </div>
+        <div class="wear-label">
+          <span>${g.kmMax} km durée de vie</span>
+          <span class="wear-pct" style="color:${col}">${pct}% usé${pct>=90?' ⚠️ À remplacer':''}</span>
+        </div>
+      </div>` : ''}
+      <div style="display:flex;gap:16px;margin-top:8px;font-size:12px;color:var(--muted)">
+        <span>🗓️ ${sessCount} sortie(s)</span>
+        ${trailKmG>0 ? `<span>🌲 ${fmt(trailKmG)} km trail</span>` : ''}
+        ${roadKmG>0  ? `<span>🏙️ ${fmt(roadKmG)} km route</span>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════
+// STRAVA OAUTH
+// ══════════════════════════════
+const STRAVA_SCOPE = 'activity:read_all';
+
+function stravaConnect() {
+  // Check if we have a token
+  if (stravaConfig.accessToken) {
+    if (confirm('Déjà connecté à Strava. Reconnecter ?')) {
+      stravaConfig = {};
+      save(KEYS.strava, stravaConfig);
+      updateStravaUI();
+    }
+    return;
+  }
+  // Check if we have client credentials
+  if (!stravaConfig.clientId || !stravaConfig.clientSecret) {
+    // Show config section
+    document.getElementById('config-section').classList.add('open');
+    showTab('sessions');
+    document.getElementById('redirect-uri-display').textContent = window.location.href.split('?')[0];
+    return;
+  }
+  launchStravaOAuth();
+}
+
+function launchStravaOAuth() {
+  const redirectUri = window.location.href.split('?')[0];
+  const url = `https://www.strava.com/oauth/authorize?client_id=${stravaConfig.clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&approval_prompt=auto&scope=${STRAVA_SCOPE}`;
+  window.location.href = url;
+}
+
+function saveStravaConfig() {
+  const id = document.getElementById('strava-client-id').value.trim();
+  const secret = document.getElementById('strava-client-secret').value.trim();
+  if (!id || !secret) { toast('Client ID et Secret requis','var(--danger)'); return; }
+  stravaConfig.clientId = id;
+  stravaConfig.clientSecret = secret;
+  save(KEYS.strava, stravaConfig);
+  document.getElementById('config-section').classList.remove('open');
+  launchStravaOAuth();
+}
+
+async function handleStravaCallback() {
+  const params = new URLSearchParams(window.location.search);
+  const code = params.get('code');
+  if (!code) return;
+
+  // Clean URL
+  window.history.replaceState({}, '', window.location.pathname);
+
+  if (!stravaConfig.clientId || !stravaConfig.clientSecret) {
+    toast('Configurez Client ID / Secret d\'abord','var(--danger)');
+    document.getElementById('config-section').classList.add('open');
+    showTab('sessions');
+    return;
+  }
+
+  try {
+    toast('Connexion Strava…');
+    const resp = await fetch('https://www.strava.com/oauth/token', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        client_id: stravaConfig.clientId,
+        client_secret: stravaConfig.clientSecret,
+        code,
+        grant_type: 'authorization_code'
+      })
+    });
+    const data = await resp.json();
+    if (data.access_token) {
+      stravaConfig.accessToken = data.access_token;
+      stravaConfig.refreshToken = data.refresh_token;
+      stravaConfig.expiresAt = data.expires_at;
+      stravaConfig.athleteName = data.athlete?.firstname || 'Athlète';
+      save(KEYS.strava, stravaConfig);
+      updateStravaUI();
+      toast(`Connecté en tant que ${stravaConfig.athleteName} ✓`);
+    } else {
+      toast('Erreur OAuth : ' + (data.message||JSON.stringify(data)), 'var(--danger)');
+    }
+  } catch(e) {
+    toast('Erreur réseau : ' + e.message, 'var(--danger)');
+  }
+}
+
+async function refreshStravaToken() {
+  if (!stravaConfig.refreshToken) return false;
+  try {
+    const resp = await fetch('https://www.strava.com/oauth/token', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({
+        client_id: stravaConfig.clientId,
+        client_secret: stravaConfig.clientSecret,
+        refresh_token: stravaConfig.refreshToken,
+        grant_type: 'refresh_token'
+      })
+    });
+    const data = await resp.json();
+    if (data.access_token) {
+      stravaConfig.accessToken = data.access_token;
+      stravaConfig.refreshToken = data.refresh_token;
+      stravaConfig.expiresAt = data.expires_at;
+      save(KEYS.strava, stravaConfig);
+      return true;
+    }
+  } catch {}
+  return false;
+}
+
+async function importFromStrava() {
+  if (!stravaConfig.accessToken) {
+    toast('Connecte-toi à Strava d\'abord', 'var(--danger)');
+    stravaConnect();
+    return;
+  }
+
+  // Refresh token if needed
+  if (stravaConfig.expiresAt && Date.now()/1000 > stravaConfig.expiresAt - 60) {
+    const ok = await refreshStravaToken();
+    if (!ok) { toast('Session expirée, reconnecte-toi','var(--danger)'); return; }
+  }
+
+  toast('Import en cours…');
+  try {
+    const resp = await fetch('https://www.strava.com/api/v3/athlete/activities?per_page=50&page=1', {
+      headers: { 'Authorization': 'Bearer ' + stravaConfig.accessToken }
+    });
+    const activities = await resp.json();
+    if (!Array.isArray(activities)) {
+      toast('Erreur API Strava', 'var(--danger)');
+      return;
+    }
+
+    // Filter run types
+    const runs = activities.filter(a => a.type === 'Run' || a.type === 'TrailRun' || a.sport_type === 'Run' || a.sport_type === 'TrailRun');
+    let added = 0;
+    for (const act of runs) {
+      const existing = sessions.find(s => s.stravaId === act.id);
+      if (existing) continue;
+      sessions.push({
+        id: uid(),
+        stravaId: act.id,
+        name: act.name || 'Sortie Strava',
+        date: act.start_date_local?.slice(0,10) || new Date().toISOString().slice(0,10),
+        type: act.type==='TrailRun'||act.sport_type==='TrailRun' ? 'trail' : 'road',
+        dist: Math.round(act.distance / 10) / 100, // m → km
+        elev: Math.round(act.total_elevation_gain || 0),
+        gearIds: [],
+        source: 'strava'
+      });
+      added++;
+    }
+    save(KEYS.sessions, sessions);
+    toast(`${added} nouvelle(s) séance(s) importée(s) ✓`);
+    renderSessions();
+  } catch(e) {
+    toast('Erreur import : ' + e.message, 'var(--danger)');
+  }
+}
+
+function updateStravaUI() {
+  const btn = document.getElementById('strava-btn');
+  const status = document.getElementById('strava-status');
+  if (stravaConfig.accessToken) {
+    btn.style.display = 'none';
+    status.classList.add('active');
+    document.getElementById('strava-athlete-name').textContent = stravaConfig.athleteName || 'Connecté';
+  } else {
+    btn.style.display = '';
+    status.classList.remove('active');
+  }
+}
+
+// ══════════════════════════════
+// INIT
+// ══════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('redirect-uri-display').textContent = window.location.href.split('?')[0];
+  handleStravaCallback();
+  updateStravaUI();
+  renderGear();
+});
+</script>
+</body>
+</html>
